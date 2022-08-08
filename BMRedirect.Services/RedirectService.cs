@@ -1,7 +1,7 @@
 ﻿using BMRedirect.Core;
 
 namespace BMRedirect.Services;
-public class IBloggerRepository : IRedirectService
+public class RedirectService : IRedirectService
 {
     /// <summary>
     /// This method get's the "manifest" of redirect items to use for our base controller
