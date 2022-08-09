@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Caching.Memory;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ namespace BMRedirect.Core.Middleware
     public class ProxyMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly IMemoryCache _memoryCache;
 
         public ProxyMiddleware(RequestDelegate next)
         {
@@ -18,7 +20,7 @@ namespace BMRedirect.Core.Middleware
 
         public async Task InvokeAsync(HttpContext httpContext, IRedirectService redirectService)
         {
-            var list = redirectService.GetRedirectItems();
+            var list = await redirectService.GetRedirectItemsAsync();
             var path = httpContext.Request.Path.Value ?? null;
 
             var matchedRedirect = list.FirstOrDefault(redir =>

@@ -3,7 +3,7 @@ namespace BMRedirect.Core
 {
     public interface IRedirectService
     {
-        List<RedirectItem> GetRedirectItems();
+        Task<List<RedirectItem>> GetRedirectItemsAsync();
     }
 }
 

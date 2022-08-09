@@ -7,8 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddMemoryCache();
 //builder.Services.AddSingleton<IRedirectService>();
-builder.Services.AddScoped<IRedirectService, RedirectService>();
+builder.Services.AddSingleton<IRedirectService, RedirectService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
