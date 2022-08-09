@@ -1,4 +1,5 @@
-﻿using BMRedirect.Core;
+﻿using BMRedirect.Api.Configurations;
+using BMRedirect.Core;
 using BMRedirect.Core.Middleware;
 using BMRedirect.Services;
 
@@ -8,11 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
-//builder.Services.AddSingleton<IRedirectService>();
 builder.Services.AddSingleton<IRedirectService, RedirectService>();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Cache"));
 
 var app = builder.Build();
 

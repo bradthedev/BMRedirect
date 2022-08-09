@@ -1,14 +1,24 @@
-﻿using BMRedirect.Core;
+﻿using BMRedirect.Api.Configurations;
+using BMRedirect.Core;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace BMRedirect.Services;
 public class RedirectService : IRedirectService
 {
-    private readonly IMemoryCache _memoryCache;
+    private const string CacheKey = "RefreshCacheKey";
 
-    public RedirectService(IMemoryCache memoryCache)
+    private readonly IMemoryCache _memoryCache;
+    private readonly CacheOptions _cacheOptions;
+
+    public RedirectService(IMemoryCache memoryCache, IOptionsMonitor<CacheOptions> optionsMonitor)
     {
         _memoryCache = memoryCache;
+        _cacheOptions = optionsMonitor.CurrentValue;
+
+        Task.Run(() => StartAutoRefresh());
+        Task.Run(() => StartAutoRefreshTest());
     }
 
     /// <summary>
@@ -16,11 +26,7 @@ public class RedirectService : IRedirectService
     /// </summary>
     public async Task<List<RedirectItem>> GetRedirectItemsAsync()
     {
-        var cachedValue = await _memoryCache.GetOrCreateAsync("RedirectCache", cacheEntry =>
-        {
-            cacheEntry.SlidingExpiration = TimeSpan.FromSeconds(30);
-            return Task.FromResult(this.getRedirectItems());
-        });
+        var cachedValue = await this.PopulateCache();
 
         return cachedValue;
     }
@@ -53,6 +59,45 @@ public class RedirectService : IRedirectService
         };
 
         return items;
+    }
+
+    private async Task<List<RedirectItem>> PopulateCache()
+    {
+        return await _memoryCache.GetOrCreateAsync(CacheKey, cacheEntry =>
+        {
+            Console.WriteLine($"Refreshing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
+            cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(_cacheOptions.RefreshInterval);
+            cacheEntry.RegisterPostEvictionCallback(LogEviction);
+            return Task.FromResult(this.getRedirectItems());
+        });
+    }
+
+    private async Task StartAutoRefresh()
+    {
+        var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(_cacheOptions.RefreshInterval));
+        while (await periodicTimer.WaitForNextTickAsync())
+        {
+            _ = PopulateCache();
+        }
+    }
+
+    private async Task StartAutoRefreshTest()
+    {
+        var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(_cacheOptions.RefreshInterval ));
+        while (await periodicTimer.WaitForNextTickAsync())
+        {
+            var x = await PopulateCache();
+            if (x != null)
+            {
+                Console.WriteLine($"Grabbing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
+            }
+            
+        }
+    }
+
+    private void LogEviction(object key, object value, EvictionReason reason, object state)
+    {
+        Console.WriteLine($"'{key}':'{value}' was evicted because: {reason}");
     }
 }
 
