@@ -15,10 +15,9 @@ namespace BMRedirect.Services.BackgroundServices
     {
         private readonly IRedirectService _redirectService;
         private readonly CacheOptions _cacheOptions;
-        private readonly ILogger<RedirectService> _logger;
-        private const string CacheKey = "RefreshCacheKey";
+        private readonly ILogger<RedirectServiceWorker> _logger;
 
-        public RedirectServiceWorker(IRedirectService redirectService, IOptionsMonitor<CacheOptions> optionsMonitor, ILogger<RedirectService> logger)
+        public RedirectServiceWorker(IRedirectService redirectService, IOptionsMonitor<CacheOptions> optionsMonitor, ILogger<RedirectServiceWorker> logger)
         {
             _redirectService = redirectService;
             _cacheOptions = optionsMonitor.CurrentValue;
@@ -26,10 +25,28 @@ namespace BMRedirect.Services.BackgroundServices
         }
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(_cacheOptions.RefreshInterval));
-            while (await periodicTimer.WaitForNextTickAsync())
+            while (!stoppingToken.IsCancellationRequested)
             {
-                var x = await _redirectService.PopulateCache();
+                try
+                {
+                    var populateTask = _redirectService.PopulateCacheAsync();
+                    var cancelTask = Task.Delay(_cacheOptions.RefreshInterval * 1000, stoppingToken);
+
+                    //double await so exceptions from either task will bubble up
+                    await await Task.WhenAny(populateTask, cancelTask);
+
+                    if (!populateTask.IsCompletedSuccessfully)
+                    {
+                        _logger.LogError("Could Not Refresh Cache");
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.Message);
+                }
+
+                await Task.Delay(_cacheOptions.RefreshInterval * 1000, stoppingToken);
             }
         }
     }

@@ -19,7 +19,7 @@ public class RedirectService : IRedirectService
         _memoryCache = memoryCache;
         _logger = logger;
         _cacheOptions = optionsMonitor.CurrentValue;
-        Task.Run(() => StartAutoRefreshTest());
+        //Task.Run(() => StartAutoRefreshTest());
     }
 
     /// <summary>
@@ -27,7 +27,7 @@ public class RedirectService : IRedirectService
     /// </summary>
     public async Task<List<RedirectItem>> GetRedirectItemsAsync()
     {
-        var cachedValue = await this.PopulateCache();
+        var cachedValue = await this.PopulateCacheAsync();
 
         return cachedValue;
     }
@@ -62,7 +62,7 @@ public class RedirectService : IRedirectService
         return items;
     }
 
-    public async Task<List<RedirectItem>> PopulateCache()
+    public async Task<List<RedirectItem>> PopulateCacheAsync()
     {
         return await _memoryCache.GetOrCreateAsync(CacheKey, cacheEntry =>
         {
@@ -78,19 +78,19 @@ public class RedirectService : IRedirectService
         var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(_cacheOptions.RefreshInterval));
         while (await periodicTimer.WaitForNextTickAsync())
         {
-            _ = PopulateCache();
+            _ = PopulateCacheAsync();
         }
     }
 
     private async Task StartAutoRefreshTest()
     {
-        var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(_cacheOptions.RefreshInterval));
+        var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(_cacheOptions.RefreshInterval * 100));
         while (await periodicTimer.WaitForNextTickAsync())
         {
-            var x = await PopulateCache();
+            var x = await PopulateCacheAsync();
             if (x != null)
             {
-                //Console.WriteLine($"Grabbing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
+                Console.WriteLine($"Grabbing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
             }
 
         }
