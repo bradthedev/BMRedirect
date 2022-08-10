@@ -11,6 +11,9 @@ builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IRedirectService, RedirectService>();
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -25,6 +28,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStatusCodePagesWithReExecute("/error/{0}");
 
 app.UseAuthorization();
 

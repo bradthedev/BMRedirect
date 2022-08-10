@@ -2,6 +2,7 @@
 using BMRedirect.Core;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace BMRedirect.Services;
@@ -10,11 +11,14 @@ public class RedirectService : IRedirectService
     private const string CacheKey = "RefreshCacheKey";
 
     private readonly IMemoryCache _memoryCache;
+    private readonly ILogger<RedirectService> _logger;
+    private readonly ILogger<RedirectService> logger;
     private readonly CacheOptions _cacheOptions;
 
-    public RedirectService(IMemoryCache memoryCache, IOptionsMonitor<CacheOptions> optionsMonitor)
+    public RedirectService(IMemoryCache memoryCache, IOptionsMonitor<CacheOptions> optionsMonitor, ILogger<RedirectService> logger)
     {
         _memoryCache = memoryCache;
+        _logger = logger;
         _cacheOptions = optionsMonitor.CurrentValue;
 
         Task.Run(() => StartAutoRefresh());
@@ -65,7 +69,7 @@ public class RedirectService : IRedirectService
     {
         return await _memoryCache.GetOrCreateAsync(CacheKey, cacheEntry =>
         {
-            Console.WriteLine($"Refreshing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
+            _logger.LogInformation($"Refreshing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
             cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(_cacheOptions.RefreshInterval);
             cacheEntry.RegisterPostEvictionCallback(LogEviction);
             return Task.FromResult(this.getRedirectItems());
@@ -83,15 +87,15 @@ public class RedirectService : IRedirectService
 
     private async Task StartAutoRefreshTest()
     {
-        var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(_cacheOptions.RefreshInterval ));
+        var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(_cacheOptions.RefreshInterval));
         while (await periodicTimer.WaitForNextTickAsync())
         {
             var x = await PopulateCache();
             if (x != null)
             {
-                Console.WriteLine($"Grabbing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
+                //Console.WriteLine($"Grabbing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
             }
-            
+
         }
     }
 
