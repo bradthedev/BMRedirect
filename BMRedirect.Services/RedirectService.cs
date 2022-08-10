@@ -23,16 +23,19 @@ public class RedirectService : IRedirectService
     }
 
     /// <summary>
-    /// This method get's the "manifest" of redirect items to use for our base controller
+    /// Gets list of Redirect Items and their Mappings
     /// </summary>
     public async Task<List<RedirectItem>> GetRedirectItemsAsync()
     {
-        var cachedValue = await this.PopulateCacheAsync();
+        var cachedValue = await PopulateCacheAsync();
 
         return cachedValue;
     }
 
-    private List<RedirectItem> GetRedirectItems()
+    /// <summary>
+    /// Example method that is a mock of the Redirect Item API
+    /// </summary>
+    private List<RedirectItem> GetRedirectItemsList()
     {
         //Build example array
         var items = new List<RedirectItem>() {
@@ -62,14 +65,23 @@ public class RedirectService : IRedirectService
         return items;
     }
 
+    /// <summary>
+    /// Method to handle caching of the Refresh Data
+    /// </summary>
+    /// <remakrs>
+    /// This method will get the data from the cache for our Redirect Service. 
+    /// If there is not data in the Redirect Service Cache then the data will either be created or 
+    /// refreshed based on the rules provided in settings for refresh time.
+    /// </remakrs>
     public async Task<List<RedirectItem>> PopulateCacheAsync()
     {
+        
         return await _memoryCache.GetOrCreateAsync(CacheKey, cacheEntry =>
         {
             _logger.LogInformation($"Refreshing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
             cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(_cacheOptions.RefreshInterval);
             cacheEntry.RegisterPostEvictionCallback(LogEviction);
-            return Task.FromResult(this.GetRedirectItems());
+            return Task.FromResult(GetRedirectItemsList());
         });
     }
 
@@ -82,17 +94,15 @@ public class RedirectService : IRedirectService
         }
     }
 
+    /// <summary>
+    /// Method to test multiple thread access 
+    /// </summary>
     private async Task StartAutoRefreshTest()
     {
         var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(_cacheOptions.RefreshInterval * 100));
         while (await periodicTimer.WaitForNextTickAsync())
         {
-            var x = await PopulateCacheAsync();
-            if (x != null)
-            {
-                Console.WriteLine($"Grabbing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
-            }
-
+            Task.Run(() => PopulateCacheAsync());
         }
     }
 
