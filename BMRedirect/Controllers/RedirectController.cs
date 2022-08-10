@@ -24,27 +24,6 @@ public class RedirectController : ControllerBase
         return Ok(redirectList);
     }
 
-    [HttpGet("campaigns/targetcampaign")]
-    public IActionResult TargetCampaignA()
-    {
-        _logger.LogInformation($"API Endpoint Matched - campaigns/targetcampaign");
-        return Ok("Redirected");
-    }
-
-    [HttpGet("campaigns/targetcampaign/channelB")]
-    public IActionResult TargetCampaignB()
-    {
-        _logger.LogInformation($"API Endpoint Matched - campaigns/targetcampaign/channelB");
-        return Ok("Redirected");
-    }
-
-    [HttpGet("products/{category}/{type}/{productId}")]
-    public IActionResult Products(string category, string type, string productId)
-    {
-        _logger.LogInformation($"API Endpoint Matched - products/{category}/{type}/{productId}");
-        return Ok("Redirected");
-    }
-
     [HttpGet("error/404")]
     public IActionResult ErrorDefault()
     {

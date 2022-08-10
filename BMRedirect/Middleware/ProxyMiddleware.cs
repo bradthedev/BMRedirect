@@ -11,12 +11,8 @@ namespace BMRedirect.Core.Middleware
     public class ProxyMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IMemoryCache _memoryCache;
 
-        public ProxyMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
+        public ProxyMiddleware(RequestDelegate next) => _next = next ?? throw new ArgumentNullException(nameof(next));
 
         public async Task InvokeAsync(HttpContext httpContext, IRedirectService redirectService)
         {
@@ -25,12 +21,7 @@ namespace BMRedirect.Core.Middleware
 
             var matchedRedirect = list.FirstOrDefault(redir =>
             {
-                if (path != null && (path == redir.RedirectUrl || path.Contains(redir.RedirectUrl)))
-                {
-                    return true;
-                }
-
-                return false;
+                return path != null && (path == redir.RedirectUrl || path.Contains(redir.RedirectUrl));
             });
 
             if (path != null && matchedRedirect != null)

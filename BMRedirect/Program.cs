@@ -2,6 +2,7 @@
 using BMRedirect.Core;
 using BMRedirect.Core.Middleware;
 using BMRedirect.Services;
+using BMRedirect.Services.BackgroundServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
+builder.Services.AddHostedService<RedirectServiceWorker>();
 builder.Services.AddSingleton<IRedirectService, RedirectService>();
 
 builder.Logging.ClearProviders();

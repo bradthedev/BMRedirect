@@ -12,7 +12,6 @@ public class RedirectService : IRedirectService
 
     private readonly IMemoryCache _memoryCache;
     private readonly ILogger<RedirectService> _logger;
-    private readonly ILogger<RedirectService> logger;
     private readonly CacheOptions _cacheOptions;
 
     public RedirectService(IMemoryCache memoryCache, IOptionsMonitor<CacheOptions> optionsMonitor, ILogger<RedirectService> logger)
@@ -20,8 +19,6 @@ public class RedirectService : IRedirectService
         _memoryCache = memoryCache;
         _logger = logger;
         _cacheOptions = optionsMonitor.CurrentValue;
-
-        Task.Run(() => StartAutoRefresh());
         Task.Run(() => StartAutoRefreshTest());
     }
 
@@ -35,7 +32,7 @@ public class RedirectService : IRedirectService
         return cachedValue;
     }
 
-    private List<RedirectItem> getRedirectItems()
+    private List<RedirectItem> GetRedirectItems()
     {
         //Build example array
         var items = new List<RedirectItem>() {
@@ -65,14 +62,14 @@ public class RedirectService : IRedirectService
         return items;
     }
 
-    private async Task<List<RedirectItem>> PopulateCache()
+    public async Task<List<RedirectItem>> PopulateCache()
     {
         return await _memoryCache.GetOrCreateAsync(CacheKey, cacheEntry =>
         {
             _logger.LogInformation($"Refreshing Cache for {CacheKey} on Thread {Thread.CurrentThread.ManagedThreadId}");
             cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(_cacheOptions.RefreshInterval);
             cacheEntry.RegisterPostEvictionCallback(LogEviction);
-            return Task.FromResult(this.getRedirectItems());
+            return Task.FromResult(this.GetRedirectItems());
         });
     }
 
@@ -101,7 +98,7 @@ public class RedirectService : IRedirectService
 
     private void LogEviction(object key, object value, EvictionReason reason, object state)
     {
-        Console.WriteLine($"'{key}':'{value}' was evicted because: {reason}");
+        //Console.WriteLine($"'{key}':'{value}' was evicted because: {reason}");
     }
 }
 
